@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paeiment - Gestion des paiements</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f1f1f1;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      padding: 20px;
+      background-color: #0056b3;
+      color: white;
+    }
+    .container {
+      width: 80%;
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+    input, select, button {
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .stats div {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+      background-color: #ffffff;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    th {
+      background-color: #0056b3;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    tr:hover {
+      background-color: #e9ecef;
+    }
+    .btn {
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    .btn-danger {
+      background-color: #dc3545;
+    }
+    .btn-danger:hover {
+      background-color: #c82333;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Paeiment - Gestion des paiements</h1>
+
+  <div class="container">
+    <form id="paymentForm">
+      <label for="fullName">Nom et Prénom :</label>
+      <input type="text" id="fullName" placeholder="Entrez le nom et prénom" required>
+
+      <label for="class">Classe :</label>
+      <select id="class" required>
+        <option value="PS">PS</option>
+        <option value="MS">MS</option>
+        <option value="GSA">GSA</option>
+        <option value="GSB">GSB</option>
+        <option value="CP1 A">CP1 A</option>
+        <option value="CP1 B">CP1 B</option>
+        <option value="CP1 C">CP1 C</option>
+        <option value="CP2 A">CP2 A</option>
+        <option value="CP2 B">CP2 B</option>
+        <option value="CP2 C">CP2 C</option>
+        <option value="CE1 A">CE1 A</option>
+        <option value="CE1 B">CE1 B</option>
+        <option value="CE1 C">CE1 C</option>
+        <option value="CE2 A">CE2 A</option>
+        <option value="CE2 B">CE2 B</option>
+        <option value="CM1 A">CM1 A</option>
+        <option value="CM1 B">CM1 B</option>
+        <option value="CM2 A">CM2 A</option>
+        <option value="CM2 B">CM2 B</option>
+      </select>
+
+      <label>
+        <input type="checkbox" id="photoPaid"> A payé la photo (500 FCFA)
+      </label>
+
+      <button type="submit">Ajouter</button>
+    </form>
+
+    <!-- Stats Panel -->
+    <div class="stats">
+      <div>Total des inscrits : <span id="totalInscrits">0</span></div>
+      <div>Montant total reçu : <span id="totalMontant">0</span> FCFA</div>
+    </div>
+
+    <!-- Print by Class Button -->
+    <button id="printByClass" class="btn hidden">Imprimer la liste par classe</button>
+
+    <!-- Participants Table -->
+    <div class="table-container">
+      <table id="participantsTable">
+        <thead>
+          <tr>
+            <th>Nom et Prénom</th>
+            <th>Date de paiement</th>
+            <th>Classe</th>
+            <th>Photo payée</th>
+            <th>Montant payé</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Les participants seront ajoutés ici dynamiquement -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('paymentForm');
+    const participantsTable = document.getElementById('participantsTable').querySelector('tbody');
+    const totalInscrits = document.getElementById('totalInscrits');
+    const totalMontant = document.getElementById('totalMontant');
+    const printByClassButton = document.getElementById('printByClass');
+
+    const participants = []; // Stocker les participants
+
+    // Obtenir la date actuelle
+    const getCurrentDate = () => {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    };
+
+    // Ajouter un participant
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const fullName = document.getElementById('fullName').value;
+      const classe = document.getElementById('class').value;
+      const photoPaid = document.getElementById('photoPaid').checked ? 500 : 0;
+      const montantPayé = 4000 + photoPaid;
+
+      participants.push({
+        fullName,
+        date: getCurrentDate(),
+        classe,
+        photoPaid,
+        montantPayé
+      });
+
+      renderTable();
+      updateStats();
+      form.reset();
+    });
+
+    // Mettre à jour les statistiques
+    function updateStats() {
+      totalInscrits.textContent = participants.length;
+      const total = participants.reduce((sum, p) => sum + p.montantPayé, 0);
+      totalMontant.textContent = total;
+      printByClassButton.classList.remove('hidden');
+    }
+
+    // Rendu de la table
+    function renderTable() {
+      participantsTable.innerHTML = '';
+      participants.forEach((participant, index) => {
+        const row = participantsTable.insertRow();
+        row.innerHTML = `
+          <td>${participant.fullName}</td>
+          <td>${participant.date}</td>
+          <td>${participant.classe}</td>
+          <td>${participant.photoPaid > 0 ? 'Oui' : 'Non'}</td>
+          <td>${participant.montantPayé} FCFA</td>
+          <td>
+            <button class="btn" onclick="editParticipant(${index})">Modifier</button>
+            <button class="btn-danger" onclick="deleteParticipant(${index})">Supprimer</button>
+          </td>
+        `;
+      });
+    }
+
+    // Modifier un participant
+    window.editParticipant = (index) => {
+      const participant = participants[index];
+      const newName = prompt('Modifier le nom', participant.fullName);
+      const newClass = prompt('Modifier la classe', participant.classe);
+      const newPhotoPaid = confirm('Le participant a-t-il payé la photo ?');
+
+      participants[index] = {
+        ...participant,
+        fullName: newName || participant.fullName,
+        classe: newClass || participant.classe,
+        photoPaid: newPhotoPaid ? 500 : 0,
+        montantPayé: 4000 + (newPhotoPaid ? 500 : 0)
+      };
+
+      renderTable();
+      updateStats();
+    };
+
+    // Supprimer un participant
+    window.deleteParticipant = (index) => {
+      participants.splice(index, 1);
+      renderTable();
+      updateStats();
+    };
+
+    // Imprimer la liste par classe
+    printByClassButton.addEventListener('click', () => {
+      const classe = prompt('Entrez la classe pour imprimer la liste', 'Ex: CP1 A');
+      if (!classe) return;
+
+      const filteredParticipants = participants.filter(p => p.classe === classe);
+      const newWindow = window.open();
+      newWindow.document.write(`
+        <html>
+          <head>
+            <title>Liste des inscrits - ${classe}</title>
+          </head>
+          <body>
+            <h2>Liste des inscrits - ${classe}</h2>
+            <table border="1" cellspacing="0" cellpadding="5">
+              <thead>
+                <tr>
+                  <th>Nom et Prénom</th>
+                  <th>Date de paiement</th>
+                  <th>Photo payée</th>
+                  <th>Montant payé</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredParticipants.map(p => `
+                  <tr>
+                    <td>${p.fullName}</td>
+                    <td>${p.date}</td>
+                    <td>${p.photoPaid > 0 ? 'Oui' : 'Non'}</td>
+                    <td>${p.montantPayé} FCFA</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+      newWindow.print();
+    });
+  </script>
+</body>
+</html>
